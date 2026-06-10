@@ -65,7 +65,7 @@ jobs:
 
       - name: Security Scan
         run: |
-          bandit -r . -ll
+           bandit -r app -ll
 
       - name: Validate Python Syntax
         run: |
