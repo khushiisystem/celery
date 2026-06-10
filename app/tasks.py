@@ -14,7 +14,14 @@ settings = get_settings()
 
 
 def run_assessment_handoff(payload: AssessmentHandoffPayload) -> str:
-    logger.info("Starting assessment handoff: assignment_id=%s ai_assessment_id=%s candidate_id=%s input_s3_key=%s output_prefix=%s", payload.assignment_id, payload.ai_assessment_id, payload.candidate_id, payload.input_s3_key or (payload.input_s3.key if payload.input_s3 else None), payload.output_prefix)
+    logger.info(
+        "Starting assessment handoff: assignment_id=%s ai_assessment_id=%s candidate_id=%s input_s3_key=%s output_prefix=%s",
+        payload.assignment_id,
+        payload.ai_assessment_id,
+        payload.candidate_id,
+        payload.input_s3_key or (payload.input_s3.key if payload.input_s3 else None),
+        payload.output_prefix,
+    )
     if payload.input_s3 is None and not payload.input_s3_key:
         raise ValueError("Payload must include either input_s3 or input_s3_key")
     input_s3 = payload.input_s3 or S3ObjectRef(
@@ -22,7 +29,11 @@ def run_assessment_handoff(payload: AssessmentHandoffPayload) -> str:
         key=payload.input_s3_key,
     )
     assessment_payload = read_s3_json(input_s3)
-    logger.debug("Assessment payload loaded: assignment_id=%s question_count=%s", assessment_payload.get("assignment_id"), len(assessment_payload.get("questions") or []))
+    logger.debug(
+        "Assessment payload loaded: assignment_id=%s question_count=%s",
+        assessment_payload.get("assignment_id"),
+        len(assessment_payload.get("questions") or []),
+    )
     metadata = {
         **payload.metadata,
         "candidate_id": payload.candidate_id,
@@ -44,7 +55,11 @@ def run_assessment_handoff(payload: AssessmentHandoffPayload) -> str:
         ai_assessment_id=payload.ai_assessment_id,
         candidate_id=payload.candidate_id,
     )
-    logger.info("Assessment handoff completed: assignment_id=%s result_s3_key=%s", payload.assignment_id, result_s3_key)
+    logger.info(
+        "Assessment handoff completed: assignment_id=%s result_s3_key=%s",
+        payload.assignment_id,
+        result_s3_key,
+    )
     return result_s3_key
 
 
@@ -58,10 +73,14 @@ def resolve_task_handler(task_name: str):
         return TASK_HANDLERS[task_name]
     except KeyError as exc:
         supported = ", ".join(sorted(TASK_HANDLERS))
-        raise ValueError(f"Unsupported task_name '{task_name}'. Supported tasks: {supported}") from exc
+        raise ValueError(
+            f"Unsupported task_name '{task_name}'. Supported tasks: {supported}"
+        ) from exc
 
 
-def notify_django_success(payload: AssessmentHandoffPayload, result_s3_key: str) -> None:
+def notify_django_success(
+    payload: AssessmentHandoffPayload, result_s3_key: str
+) -> None:
     send_callback(
         str(payload.callback_url),
         CallbackPayload(
@@ -102,13 +121,22 @@ def notify_django_failure(payload: AssessmentHandoffPayload, exc: Exception) -> 
     max_retries=settings.celery_task_max_retries,
 )
 def execute_task(self, task_name: str, payload: dict[str, Any]) -> dict[str, Any]:
-    logger.info("Received Celery task: task_name=%s celery_task_id=%s payload_keys=%s", task_name, self.request.id, sorted((payload or {}).keys()))
+    logger.info(
+        "Received Celery task: task_name=%s celery_task_id=%s payload_keys=%s",
+        task_name,
+        self.request.id,
+        sorted((payload or {}).keys()),
+    )
     handler = resolve_task_handler(task_name)
     handoff_payload = AssessmentHandoffPayload.model_validate(payload)
 
     try:
         result_s3_key = handler(handoff_payload)
-        logger.info("Sending success callback: assignment_id=%s result_s3_key=%s", handoff_payload.assignment_id, result_s3_key)
+        logger.info(
+            "Sending success callback: assignment_id=%s result_s3_key=%s",
+            handoff_payload.assignment_id,
+            result_s3_key,
+        )
         notify_django_success(handoff_payload, result_s3_key)
         return {
             "status": "success",

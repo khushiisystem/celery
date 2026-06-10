@@ -10,7 +10,9 @@ from app.s3_utils import download_s3_file
 logger = logging.getLogger(__name__)
 
 
-def _first_present(source: dict[str, Any], keys: tuple[str, ...], default: Any = None) -> Any:
+def _first_present(
+    source: dict[str, Any], keys: tuple[str, ...], default: Any = None
+) -> Any:
     for key in keys:
         value = source.get(key)
         if value not in (None, ""):
@@ -62,27 +64,49 @@ def _audio_key(item: dict[str, Any]) -> str | None:
     return item.get("audio_s3_key")
 
 
-def _transcribe_if_needed(item: dict[str, Any], input_bucket: str | None) -> tuple[str, str | None]:
+def _transcribe_if_needed(
+    item: dict[str, Any], input_bucket: str | None
+) -> tuple[str, str | None]:
     existing_answer = _answer_text(item)
     audio_key = _audio_key(item)
     if existing_answer:
-        logger.info("Existing answer present; skipping transcription for question_number=%s", item.get("question_number"))
+        logger.info(
+            "Existing answer present; skipping transcription for question_number=%s",
+            item.get("question_number"),
+        )
         return existing_answer, None
     if not audio_key:
-        logger.info("No audio key; skipping transcription for question_number=%s", item.get("question_number"))
+        logger.info(
+            "No audio key; skipping transcription for question_number=%s",
+            item.get("question_number"),
+        )
         return existing_answer, None
     if not input_bucket:
         return "", "Missing input bucket for audio transcription"
 
     local_audio = None
     try:
-        logger.info("Transcribing audio: question_number=%s bucket=%s key=%s", item.get("question_number"), input_bucket, audio_key)
+        logger.info(
+            "Transcribing audio: question_number=%s bucket=%s key=%s",
+            item.get("question_number"),
+            input_bucket,
+            audio_key,
+        )
         local_audio = download_s3_file(input_bucket, audio_key, suffix=".webm")
         transcript = transcribe_audio(local_audio, method="whisper") or ""
-        logger.info("Transcription finished: question_number=%s transcript_chars=%s", item.get("question_number"), len(transcript))
+        logger.info(
+            "Transcription finished: question_number=%s transcript_chars=%s",
+            item.get("question_number"),
+            len(transcript),
+        )
         return transcript, None
     except Exception as exc:
-        logger.exception("Transcription failed: question_number=%s bucket=%s key=%s", item.get("question_number"), input_bucket, audio_key)
+        logger.exception(
+            "Transcription failed: question_number=%s bucket=%s key=%s",
+            item.get("question_number"),
+            input_bucket,
+            audio_key,
+        )
         return "", str(exc)
     finally:
         if local_audio and os.path.exists(local_audio):
@@ -163,9 +187,11 @@ def _build_question_result(
         "question_type": item.get("question_type") or item.get("type") or "text",
         "answer_text": answer,
         "transcript": answer or None,
-        "transcription_status": "success"
-        if answer
-        else ("failed" if transcription_error else "no_audio_or_answer"),
+        "transcription_status": (
+            "success"
+            if answer
+            else ("failed" if transcription_error else "no_audio_or_answer")
+        ),
         "transcription_error": transcription_error,
         "score": score,
         "status": _score_label(score),
@@ -244,10 +270,19 @@ def process_assessment_payload(
     if not isinstance(payload, dict):
         raise ValueError("Invalid assessment payload")
     assignment_id = payload.get("assignment_id") or metadata.get("assignment_id")
-    logger.info("Processing assessment payload: assignment_id=%s ai_assessment_id=%s candidate_id=%s", assignment_id, payload.get("ai_assessment_id") or metadata.get("ai_assessment_id"), payload.get("candidate_id") or metadata.get("candidate_id"))
+    logger.info(
+        "Processing assessment payload: assignment_id=%s ai_assessment_id=%s candidate_id=%s",
+        assignment_id,
+        payload.get("ai_assessment_id") or metadata.get("ai_assessment_id"),
+        payload.get("candidate_id") or metadata.get("candidate_id"),
+    )
     items = _collect_items(payload)
     input_bucket = metadata.get("input_bucket")
-    logger.info("Collected assessment items: assignment_id=%s count=%s", assignment_id, len(items))
+    logger.info(
+        "Collected assessment items: assignment_id=%s count=%s",
+        assignment_id,
+        len(items),
+    )
     question_results = [
         _build_question_result(item, position, input_bucket)
         for position, item in enumerate(items, start=1)
@@ -255,7 +290,11 @@ def process_assessment_payload(
     scores = _aggregate_scores(question_results)
     logger.info("Generating AI feedback: assignment_id=%s", assignment_id)
     ai_feedback = generate_ai_feedback_report(payload, question_results)
-    logger.info("AI feedback generated: assignment_id=%s chars=%s", assignment_id, len(ai_feedback or ""))
+    logger.info(
+        "AI feedback generated: assignment_id=%s chars=%s",
+        assignment_id,
+        len(ai_feedback or ""),
+    )
     if not ai_feedback:
         ai_feedback = _feedback_text(payload, question_results, scores)
 
@@ -277,8 +316,7 @@ def process_assessment_payload(
             "assignment_id": assignment_id,
             "ai_assessment_id": payload.get("ai_assessment_id")
             or metadata.get("ai_assessment_id"),
-            "candidate_id": payload.get("candidate_id")
-            or metadata.get("candidate_id"),
+            "candidate_id": payload.get("candidate_id") or metadata.get("candidate_id"),
             "responses": responses,
             "ai_feedback": ai_feedback,
             **scores,
@@ -288,6 +326,8 @@ def process_assessment_payload(
             "processor": "local_assessment_processor",
             "candidate_id": metadata.get("candidate_id"),
             "questions_received": len(items),
-            "answers_processed": len([item for item in question_results if item.get("answer_text")]),
+            "answers_processed": len(
+                [item for item in question_results if item.get("answer_text")]
+            ),
         },
     )

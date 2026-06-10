@@ -4,7 +4,6 @@ from app.config import Settings, get_settings
 from app.schemas import DispatchPayload, TaskAcceptedResponse, TaskStatus
 from app.tasks import execute_task
 
-
 app = FastAPI(title="Celery S3 Processing Service")
 
 

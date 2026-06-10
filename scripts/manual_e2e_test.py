@@ -93,11 +93,21 @@ def main():
     parser = argparse.ArgumentParser(
         description="Upload a production-like S3 handoff payload and dispatch the Celery task."
     )
-    parser.add_argument("--audio-file", required=True, help="Path to a local .webm/.wav/.mp3 audio answer file")
-    parser.add_argument("--callback-url", required=True, help="Callback URL, e.g. http://127.0.0.1:9000/callback")
+    parser.add_argument(
+        "--audio-file",
+        required=True,
+        help="Path to a local .webm/.wav/.mp3 audio answer file",
+    )
+    parser.add_argument(
+        "--callback-url",
+        required=True,
+        help="Callback URL, e.g. http://127.0.0.1:9000/callback",
+    )
     parser.add_argument("--assignment-id", type=int, default=123)
     parser.add_argument("--ai-assessment-id", type=int, default=55)
-    parser.add_argument("--bucket", default=None, help="S3 bucket. Defaults to AWS_STORAGE_BUCKET_NAME")
+    parser.add_argument(
+        "--bucket", default=None, help="S3 bucket. Defaults to AWS_STORAGE_BUCKET_NAME"
+    )
     parser.add_argument(
         "--prefix",
         default=None,

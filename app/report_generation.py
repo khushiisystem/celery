@@ -34,7 +34,11 @@ def generate_ai_feedback_report(
     response_by_q = _answer_by_question_number(responses)
 
     inner = assessment_payload.get("payload")
-    payload = {**assessment_payload, **inner} if isinstance(inner, dict) else assessment_payload
+    payload = (
+        {**assessment_payload, **inner}
+        if isinstance(inner, dict)
+        else assessment_payload
+    )
 
     for question in payload.get("questions", []):
         question_number = question.get("question_number")
@@ -61,7 +65,9 @@ def generate_ai_feedback_report(
 
     attempted = len(answers)
     unanswered = max(total_questions - attempted, 0)
-    coverage_percent = round((attempted / total_questions) * 100) if total_questions else 0
+    coverage_percent = (
+        round((attempted / total_questions) * 100) if total_questions else 0
+    )
     experience_level = payload.get("assessment", {}).get("experience_level", "")
 
     assessment_context = (
@@ -75,14 +81,19 @@ def generate_ai_feedback_report(
 
     gemini_client = get_gemini_client()
     if not gemini_client.test_connection():
-        return "Assessment completed successfully. AI feedback is currently unavailable."
+        return (
+            "Assessment completed successfully. AI feedback is currently unavailable."
+        )
 
     feedback = gemini_client.provide_feedback(
         questions=questions,
         answers=answers,
         resume_text=f"{payload.get('resume_text', '')}{assessment_context}",
-        #gesture_analysis=(payload.get("analysis") or {}).get("gesture_analysis"),
+        # gesture_analysis=(payload.get("analysis") or {}).get("gesture_analysis"),
         question_numbers=question_numbers,
     )
 
-    return feedback or "Assessment completed successfully. Detailed feedback will be available soon."
+    return (
+        feedback
+        or "Assessment completed successfully. Detailed feedback will be available soon."
+    )

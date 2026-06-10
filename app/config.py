@@ -30,12 +30,18 @@ class Settings(BaseSettings):
 
     google_cloud_project: str | None = None
     google_cloud_location: str = "us-central1"
-    google_credentials_path: str | None = Field(default=None, alias="GOOGLE_APPLICATION_CREDENTIALS")
-    google_credentials_json: str | None = Field(default=None, alias="GOOGLE_CREDENTIALS_JSON")
+    google_credentials_path: str | None = Field(
+        default=None, alias="GOOGLE_APPLICATION_CREDENTIALS"
+    )
+    google_credentials_json: str | None = Field(
+        default=None, alias="GOOGLE_CREDENTIALS_JSON"
+    )
     gemini_model: str = "gemini-2.5-flash"
     gemini_connection_timeout_seconds: int = Field(default=30, ge=1)
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore", populate_by_name=True
+    )
 
 
 @lru_cache

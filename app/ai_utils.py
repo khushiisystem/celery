@@ -28,11 +28,17 @@ def _configure_vertex_ai() -> bool:
 
     settings = get_settings()
     creds_path = settings.google_credentials_path
-    default_creds_path = Path(__file__).resolve().parents[2] / "credentials" / "google-credentials.json"
-    if (not creds_path or not os.path.exists(creds_path)) and default_creds_path.exists():
+    default_creds_path = (
+        Path(__file__).resolve().parents[2] / "credentials" / "google-credentials.json"
+    )
+    if (
+        not creds_path or not os.path.exists(creds_path)
+    ) and default_creds_path.exists():
         creds_path = str(default_creds_path)
 
-    if (not creds_path or not os.path.exists(creds_path)) and settings.google_credentials_json:
+    if (
+        not creds_path or not os.path.exists(creds_path)
+    ) and settings.google_credentials_json:
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
         tmp.write(settings.google_credentials_json)
         tmp.close()
@@ -43,7 +49,9 @@ def _configure_vertex_ai() -> bool:
         print("[WARN] Vertex AI not configured. Missing: GOOGLE_CLOUD_PROJECT")
         return False
     if not creds_path or not os.path.exists(creds_path):
-        print("[WARN] Vertex AI not configured. Missing: GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_CREDENTIALS_JSON")
+        print(
+            "[WARN] Vertex AI not configured. Missing: GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_CREDENTIALS_JSON"
+        )
         return False
 
     try:
@@ -52,7 +60,9 @@ def _configure_vertex_ai() -> bool:
         os.environ["GOOGLE_CLOUD_PROJECT"] = settings.google_cloud_project
         os.environ["GOOGLE_CLOUD_LOCATION"] = settings.google_cloud_location
         _vertex_configured = True
-        print(f"[INFO] Vertex AI configured (project: {settings.google_cloud_project}, model: {settings.gemini_model})")
+        print(
+            f"[INFO] Vertex AI configured (project: {settings.google_cloud_project}, model: {settings.gemini_model})"
+        )
         return True
     except Exception as exc:
         print(f"[ERROR] Failed to configure Vertex AI: {exc}")
@@ -145,7 +155,9 @@ class GeminiAIClient:
                 if question_numbers and index < len(question_numbers)
                 else index + 1
             )
-            qa_blocks.append(f"Question {question_number}: {question}\nAnswer: {answer}")
+            qa_blocks.append(
+                f"Question {question_number}: {question}\nAnswer: {answer}"
+            )
         qa_pairs = "\n\n".join(qa_blocks)
 
         gesture_context = ""
@@ -292,7 +304,11 @@ def convert_webm_to_wav(input_path: str) -> str:
     ]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        if result.returncode == 0 and os.path.exists(wav_path) and os.path.getsize(wav_path) > 0:
+        if (
+            result.returncode == 0
+            and os.path.exists(wav_path)
+            and os.path.getsize(wav_path) > 0
+        ):
             return wav_path
         print(f"[WARN] ffmpeg conversion failed: {result.stderr}")
     except FileNotFoundError:
@@ -347,11 +363,17 @@ def post_process_transcript(transcript: str) -> str:
 
     transcript = re.sub(r"\s+", " ", transcript).strip()
     if transcript:
-        transcript = transcript[0].upper() + transcript[1:] if len(transcript) > 1 else transcript.upper()
+        transcript = (
+            transcript[0].upper() + transcript[1:]
+            if len(transcript) > 1
+            else transcript.upper()
+        )
     return transcript
 
 
-def transcribe_audio_with_whisper(audio_file_path: str, language_hint: str | None = None) -> str:
+def transcribe_audio_with_whisper(
+    audio_file_path: str, language_hint: str | None = None
+) -> str:
     converted_path = None
     try:
         converted_path = convert_webm_to_wav(audio_file_path)
@@ -369,7 +391,9 @@ def transcribe_audio_with_whisper(audio_file_path: str, language_hint: str | Non
             vad_filter=False,
             without_timestamps=False,
         )
-        transcript = " ".join(segment.text.strip() for segment in segments if segment.text.strip())
+        transcript = " ".join(
+            segment.text.strip() for segment in segments if segment.text.strip()
+        )
         return post_process_transcript(transcript)
     except Exception as exc:
         print(f"[ERROR] Whisper transcription failed: {exc}")

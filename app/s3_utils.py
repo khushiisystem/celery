@@ -46,7 +46,9 @@ def s3_client():
 def default_s3_bucket() -> str:
     settings = get_settings()
     if not settings.aws_storage_bucket_name:
-        raise RuntimeError("AWS_STORAGE_BUCKET_NAME is required when S3 bucket is not in payload")
+        raise RuntimeError(
+            "AWS_STORAGE_BUCKET_NAME is required when S3 bucket is not in payload"
+        )
     return settings.aws_storage_bucket_name
 
 
@@ -68,7 +70,12 @@ def read_s3_json(s3_ref: S3ObjectRef) -> dict:
     logger.debug("Reading S3 JSON: bucket=%s key=%s", s3_ref.bucket, s3_ref.key)
     response = s3_client().get_object(Bucket=s3_ref.bucket, Key=s3_ref.key)
     payload = json.loads(response["Body"].read())
-    logger.info("Loaded S3 input manifest: bucket=%s key=%s keys=%s", s3_ref.bucket, s3_ref.key, sorted(payload.keys()))
+    logger.info(
+        "Loaded S3 input manifest: bucket=%s key=%s keys=%s",
+        s3_ref.bucket,
+        s3_ref.key,
+        sorted(payload.keys()),
+    )
     return payload
 
 
@@ -90,9 +97,13 @@ def download_s3_file(bucket: str, key: str, suffix: str = ".webm") -> str:
     local = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     local.close()
     try:
-        logger.debug("Downloading S3 file: bucket=%s key=%s temp=%s", bucket, key, local.name)
+        logger.debug(
+            "Downloading S3 file: bucket=%s key=%s temp=%s", bucket, key, local.name
+        )
         s3_client().download_file(bucket, key, local.name)
-        logger.info("Downloaded S3 file: bucket=%s key=%s temp=%s", bucket, key, local.name)
+        logger.info(
+            "Downloaded S3 file: bucket=%s key=%s temp=%s", bucket, key, local.name
+        )
         return local.name
     except Exception:
         try:
@@ -120,7 +131,9 @@ def upload_result_json(
         ingestion_datetime=ingestion_datetime,
     )
     result_body = result.model_dump(mode="json", exclude_none=True)
-    result_body.setdefault("metadata", {})["ingestion_datetime"] = ingestion_datetime.isoformat()
+    result_body.setdefault("metadata", {})[
+        "ingestion_datetime"
+    ] = ingestion_datetime.isoformat()
     result_body["metadata"]["result_s3_key"] = result_key
 
     put_kwargs = {
@@ -134,7 +147,14 @@ def upload_result_json(
     if settings.s3_output_acl:
         put_kwargs["ACL"] = settings.s3_output_acl
 
-    logger.info("Uploading result JSON: bucket=%s key=%s assignment_id=%s ai_assessment_id=%s candidate_id=%s", bucket, result_key, assignment_id, ai_assessment_id, candidate_id)
+    logger.info(
+        "Uploading result JSON: bucket=%s key=%s assignment_id=%s ai_assessment_id=%s candidate_id=%s",
+        bucket,
+        result_key,
+        assignment_id,
+        ai_assessment_id,
+        candidate_id,
+    )
     s3_client().put_object(**put_kwargs)
     logger.info("Uploaded result JSON: bucket=%s key=%s", bucket, result_key)
 

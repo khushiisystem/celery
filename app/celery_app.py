@@ -20,7 +20,6 @@ def configure_logging() -> None:
     )
 
 
-
 def create_celery_app() -> Celery:
     """
     Create the Celery application used by this service.
