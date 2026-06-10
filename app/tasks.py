@@ -15,7 +15,14 @@ settings = get_settings()
 
 def run_assessment_handoff(payload: AssessmentHandoffPayload) -> str:
     logger.info(
-        "Starting assessment handoff: assignment_id=%s ai_assessment_id=%s candidate_id=%s input_s3_key=%s output_prefix=%s",
+        (
+            "Starting assessment handoff: "
+            "assignment_id=%s "
+            "ai_assessment_id=%s "
+            "candidate_id=%s "
+            "input_s3_key=%s "
+            "output_prefix=%s"
+        ),
         payload.assignment_id,
         payload.ai_assessment_id,
         payload.candidate_id,
