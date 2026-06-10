@@ -1,12 +1,12 @@
 name: CI
 
 on:
-  pull_request:
+  push:
     branches:
       - main
       - develop
 
-  push:
+  pull_request:
     branches:
       - main
       - develop
@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Cache Dependencies
+      - name: Cache Pip Packages
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -39,19 +39,33 @@ jobs:
 
       - name: Install QA Tools
         run: |
-          pip install flake8 black bandit
+          pip install black==26.5.1 flake8==7.3.0 bandit==1.9.4
 
-      - name: Check Formatting
+      - name: Debug Environment
+        run: |
+          echo "===== COMMIT ====="
+          git rev-parse HEAD
+
+          echo "===== PYTHON ====="
+          python --version
+
+          echo "===== BLACK ====="
+          black --version
+
+          echo "===== FILES ====="
+          find . -name "*.py"
+
+      - name: Black Format Check
         run: |
           black --check .
 
-      - name: Run Linting
+      - name: Flake8 Lint Check
         run: |
           flake8 .
 
       - name: Security Scan
         run: |
-          bandit -r .
+          bandit -r . -ll
 
       - name: Validate Python Syntax
         run: |
@@ -75,7 +89,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Test Dependencies
+      - name: Install Test Tools
         run: |
           pip install pytest
 
