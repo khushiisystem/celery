@@ -34,26 +34,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Install QA Tools
         run: |
           pip install black==26.5.1 flake8==7.3.0 bandit==1.9.4
-
-      - name: Debug Environment
-        run: |
-          echo "===== COMMIT ====="
-          git rev-parse HEAD
-
-          echo "===== PYTHON ====="
-          python --version
-
-          echo "===== BLACK ====="
-          black --version
-
-          echo "===== FILES ====="
-          find . -name "*.py"
 
       - name: Black Format Check
         run: |
@@ -65,7 +50,7 @@ jobs:
 
       - name: Security Scan
         run: |
-           bandit -r app -ll
+          bandit -r app -ll
 
       - name: Validate Python Syntax
         run: |
@@ -86,7 +71,6 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Install Test Tools
@@ -96,7 +80,7 @@ jobs:
       - name: Run Tests
         run: |
           if [ -d "tests" ]; then
-           pytest tests -v
-         else
-           echo "No tests directory found. Skipping tests."
-        fi
+            pytest tests -v
+          else
+            echo "No tests directory found. Skipping tests."
+          fi
