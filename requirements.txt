@@ -1,0 +1,13 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+celery==5.4.0
+redis==5.2.1
+boto3==1.35.90
+httpx==0.28.1
+pydantic-settings==2.7.1
+google-generativeai==0.8.3
+faster-whisper==1.1.0
+tiktoken==0.8.0
+pydub==0.25.1
+python-dotenv==1.0.1
+google-genai
