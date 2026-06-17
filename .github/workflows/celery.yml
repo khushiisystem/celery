@@ -88,6 +88,7 @@ steps:
           if [ -f docker-compose.yml ]; then
             docker compose down || true
             docker compose up -d --build
+            docker compose down 
           fi
 
           echo "Rollback completed."
