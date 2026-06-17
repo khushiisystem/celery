@@ -1,0 +1,108 @@
+name: Deploy Background Tasks
+
+on:
+push:
+branches:
+- develop
+- main
+
+jobs:
+deploy:
+runs-on: ubuntu-latest
+
+```
+steps:
+  - name: Checkout Code
+    uses: actions/checkout@v4
+
+  - name: Set Environment Variables
+    run: |
+      if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+        echo "ENV=prod" >> $GITHUB_ENV
+        echo "DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}" >> $GITHUB_ENV
+        echo "DEPLOY_USER=${{ secrets.DEPLOY_USER }}" >> $GITHUB_ENV
+        echo "DEPLOY_PORT=${{ secrets.DEPLOY_PORT }}" >> $GITHUB_ENV
+        echo "APP_DIR=/home/zuserd/background_tasks" >> $GITHUB_ENV
+      else
+        echo "ENV=dev" >> $GITHUB_ENV
+        echo "DEPLOY_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
+        echo "DEPLOY_USER=${{ secrets.DEV_USER }}" >> $GITHUB_ENV
+        echo "DEPLOY_PORT=${{ secrets.DEV_PORT }}" >> $GITHUB_ENV
+        echo "APP_DIR=/home/dev_assessment/background_tasks" >> $GITHUB_ENV
+      fi
+
+  - name: Setup SSH
+    uses: webfactory/ssh-agent@v0.9.0
+    with:
+      ssh-private-key: ${{ github.ref == 'refs/heads/main' && secrets.DEPLOY_SSH_KEY || secrets.DEV_DEPLOY_SSH_KEY }}
+
+  - name: Add Server Host Key
+    run: |
+      mkdir -p ~/.ssh
+      ssh-keyscan -p $DEPLOY_PORT $DEPLOY_HOST >> ~/.ssh/known_hosts
+
+  - name: Deploy Application
+    run: |
+      ssh -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST << EOF
+        set -e
+
+        APP_DIR=$APP_DIR
+        BRANCH=${GITHUB_REF##*/}
+
+        cd \$APP_DIR
+
+        echo "Current Commit: \$(git rev-parse HEAD)"
+
+        git fetch origin \$BRANCH
+        git reset --hard origin/\$BRANCH
+
+        if [ -f requirements.txt ]; then
+          python3 -m venv venv || true
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          deactivate
+        fi
+
+        if [ -f docker-compose.yml ]; then
+          docker compose down || true
+          docker compose pull || true
+          docker compose up -d --build
+        fi
+
+        echo "Deployment completed successfully."
+      EOF
+
+  - name: Health Check
+    run: |
+      ssh -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST << EOF
+        cd $APP_DIR
+
+        if [ -f docker-compose.yml ]; then
+          docker compose ps
+        fi
+      EOF
+
+  - name: Rollback if Deployment Fails
+    if: failure()
+    run: |
+      ssh -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST << EOF
+        set -e
+
+        cd $APP_DIR
+
+        if [ -f .git/ORIG_HEAD ]; then
+          git reset --hard \$(cat .git/ORIG_HEAD)
+
+          if [ -f docker-compose.yml ]; then
+            docker compose down || true
+            docker compose up -d --build
+          fi
+
+          echo "Rollback completed."
+        else
+          echo "No rollback commit found."
+          exit 1
+        fi
+      EOF
+```
